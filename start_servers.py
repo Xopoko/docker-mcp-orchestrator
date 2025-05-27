@@ -28,6 +28,7 @@ if isinstance(servers, dict):
 
 processes = []
 
+
 def _shutdown(signum, frame):
     for p in processes:
         if p.poll() is None:
@@ -39,6 +40,7 @@ def _shutdown(signum, frame):
             p.kill()
     sys.exit(0)
 
+
 signal.signal(signal.SIGTERM, _shutdown)
 signal.signal(signal.SIGINT, _shutdown)
 for srv in servers:
@@ -48,9 +50,22 @@ for srv in servers:
     if not dest.exists():
         subprocess.run(["git", "clone", repo, str(dest)], check=True)
     if (dest / "requirements.txt").exists():
-        subprocess.run([sys.executable, "-m", "pip", "install", "-r", str(dest / "requirements.txt")], check=True)
+        subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pip",
+                "install",
+                "-r",
+                str(dest / "requirements.txt"),
+            ],
+            check=True,
+        )
     if (dest / "setup.py").exists():
-        subprocess.run([sys.executable, "-m", "pip", "install", "-e", str(dest)], check=True)
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "-e", str(dest)],
+            check=True,
+        )
 
     cmd = srv.get("command") or "./start.sh"
     env = os.environ.copy()
@@ -79,8 +94,16 @@ for srv in servers:
                 dst.write(data)
                 dst.flush()
 
-        threading.Thread(target=_forward, args=(sys.stdin.buffer, proc.stdin), daemon=True).start()
-        threading.Thread(target=_forward, args=(proc.stdout, sys.stdout.buffer), daemon=True).start()
+        threading.Thread(
+            target=_forward,
+            args=(sys.stdin.buffer, proc.stdin),
+            daemon=True,
+        ).start()
+        threading.Thread(
+            target=_forward,
+            args=(proc.stdout, sys.stdout.buffer),
+            daemon=True,
+        ).start()
     else:
         proc = subprocess.Popen(cmd, shell=True, cwd=dest, env=env)
     processes.append(proc)
