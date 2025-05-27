@@ -68,6 +68,16 @@ docker run --rm \
 
 This approach makes it easy to extend the container with additional MCP servers without altering the image itself.
 
+## JSON-RPC control server
+
+`json_rpc_server.py` provides a minimal [JSON-RPC 2.0](https://www.jsonrpc.org/specification) implementation. It exposes the standard `initialize`, `shutdown` and `exit` handlers so external tools can configure and gracefully stop the orchestrator.
+
+Run the server on port `4000` (or any other port) with:
+
+```bash
+python json_rpc_server.py 4000
+```
+
 ## Using docker compose
 
 Alternatively you can run the orchestrator with [Docker Compose](https://docs.docker.com/compose/).
