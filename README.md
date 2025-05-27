@@ -68,3 +68,23 @@ docker run --rm \
 
 This approach makes it easy to extend the container with additional MCP servers without altering the image itself.
 
+## Using docker compose
+
+Alternatively you can run the orchestrator with [Docker Compose](https://docs.docker.com/compose/).
+Create a `docker-compose.yml` file like the following and run `docker compose up --build`:
+
+```yaml
+version: "3.9"
+services:
+  orchestrator:
+    build: .
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+    environment:
+      MCP_CONFIG_FILE: /config.toml
+      OPENAI_API_KEY: your-openai-key
+      TAVILY_API_KEY: your-key
+    volumes:
+      - ./config.toml:/config.toml
+```
