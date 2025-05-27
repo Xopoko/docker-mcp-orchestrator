@@ -15,7 +15,7 @@ command = "./setup_and_run.sh"
 
 [[server]]
 repo = "https://github.com/tavily-ai/tavily-mcp.git"
-command = "npx -y tavily-mcp@0.2.1"
+command = "npx -y tavily-mcp@0.2.1 serve"
 # env = { TAVILY_API_KEY = "your-key" }
 ```
 
@@ -30,11 +30,18 @@ docker build -t mcp-archestrator .
 ```bash
 docker run --rm -p 8000:8000 -p 8001:8001 mcp-archestrator
 ```
+```powershell
+docker build -t mcp-archestrator .; docker run --rm -p 8000:8000 -p 8001:8001 mcp-archestrator
+```
 
 Adjust the ports for your servers as needed. To supply a custom config file:
 
 ```bash
-docker run --rm -e MCP_CONFIG_FILE=/path/to/config.toml -v $(pwd)/config.toml:/config.toml mcp-archestrator
+docker run --rm \
+  -e MCP_CONFIG_FILE=/config.toml \
+  -e TAVILY_API_KEY=your-key \
+  -v $(pwd)/config.toml:/config.toml \
+  mcp-archestrator
 ```
 
 This allows you to easily add additional MCP servers with their required environment variables.
