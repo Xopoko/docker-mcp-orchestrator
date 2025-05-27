@@ -1,6 +1,8 @@
 [[server]]
 repo = "https://github.com/agency-ai-solutions/openai-codex-mcp.git"
 command = "./setup_and_run.sh"
+env = { OPENAI_API_KEY = "your-openai-key" }
+transport = "stdio"
 
 [[server]]
 repo = "https://github.com/tavily-ai/tavily-mcp.git"

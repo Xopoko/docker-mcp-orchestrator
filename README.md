@@ -12,6 +12,9 @@ Each entry in the file describes a repository to clone and the command to run. E
 [[server]]
 repo = "https://github.com/agency-ai-solutions/openai-codex-mcp.git"
 command = "./setup_and_run.sh"
+# env = { OPENAI_API_KEY = "your-openai-key" }
+# transport defaults to "http". Use "stdio" to pipe stdin/stdout
+transport = "stdio"
 
 [[server]]
 repo = "https://github.com/tavily-ai/tavily-mcp.git"
@@ -39,6 +42,7 @@ Adjust the ports for your servers as needed. To supply a custom config file:
 ```bash
 docker run --rm \
   -e MCP_CONFIG_FILE=/config.toml \
+  -e OPENAI_API_KEY=your-openai-key \
   -e TAVILY_API_KEY=your-key \
   -v $(pwd)/config.toml:/config.toml \
   mcp-archestrator

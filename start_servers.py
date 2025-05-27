@@ -3,6 +3,8 @@ import os
 import subprocess
 import sys
 import pathlib
+import threading
+import signal
 
 try:
     import tomllib
@@ -25,6 +27,20 @@ if isinstance(servers, dict):
     servers = [servers]
 
 processes = []
+
+def _shutdown(signum, frame):
+    for p in processes:
+        if p.poll() is None:
+            p.terminate()
+    for p in processes:
+        try:
+            p.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            p.kill()
+    sys.exit(0)
+
+signal.signal(signal.SIGTERM, _shutdown)
+signal.signal(signal.SIGINT, _shutdown)
 for srv in servers:
     repo = srv["repo"]
     name = srv.get("name") or pathlib.Path(repo).stem.replace('.git', '')
@@ -39,8 +55,35 @@ for srv in servers:
     cmd = srv.get("command") or "./start.sh"
     env = os.environ.copy()
     env.update({k: str(v) for k, v in srv.get("env", {}).items()})
-    print(f"Starting {name}: {cmd}")
-    processes.append(subprocess.Popen(cmd, shell=True, cwd=dest, env=env))
+    transport = srv.get("transport", "http")
+    print(f"Starting {name} ({transport}): {cmd}")
+    if transport == "stdio":
+        proc = subprocess.Popen(
+            cmd,
+            shell=True,
+            cwd=dest,
+            env=env,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+        )
+
+        def _forward(src, dst):
+            while True:
+                data = src.read(1024)
+                if not data:
+                    try:
+                        dst.close()
+                    except Exception:
+                        pass
+                    break
+                dst.write(data)
+                dst.flush()
+
+        threading.Thread(target=_forward, args=(sys.stdin.buffer, proc.stdin), daemon=True).start()
+        threading.Thread(target=_forward, args=(proc.stdout, sys.stdout.buffer), daemon=True).start()
+    else:
+        proc = subprocess.Popen(cmd, shell=True, cwd=dest, env=env)
+    processes.append(proc)
 
 for p in processes:
     p.wait()
