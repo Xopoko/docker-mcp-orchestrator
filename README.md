@@ -1,4 +1,4 @@
-# Docker MCP Archestrator
+# Docker MCP Orchestrator
 
 This project provides a simple Docker image that launches multiple MCP servers inside one container. The list of servers and their configuration is stored in a TOML file.
 
