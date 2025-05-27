@@ -1,43 +1,61 @@
 # Docker MCP Orchestrator
 
-This project provides a simple Docker image that launches multiple MCP servers inside one container. The list of servers and their configuration is stored in a TOML file.
+Docker MCP Orchestrator provides a lightweight way to run multiple **MCP servers** in a single container.  The orchestrator clones each server repository, installs any required dependencies and launches the commands described in a simple TOML configuration file.  Both HTTP servers and those that communicate over STDIO are supported.
 
-## Configuration
+## How it works
 
-The container reads `/opt/mcps/mcp_config.toml` by default. You can override the path by setting the `MCP_CONFIG_FILE` environment variable.
+1. `start_servers.py` reads the configuration file located at `/opt/mcps/mcp_config.toml` (or the path defined by `MCP_CONFIG_FILE`).
+2. Each server entry is cloned into `/opt/mcps/repos/<name>` if it is not already present.
+3. If `requirements.txt` or `setup.py` is found in the repository, those dependencies are installed.
+4. The configured command is started.  When `transport = "stdio"` the container's STDIN/STDOUT are piped to the process.
+5. All subprocesses are terminated cleanly when the container receives `SIGTERM` or `SIGINT`.
 
-Each entry in the file describes a repository to clone and the command to run. Environment variables required by the server can also be specified.
+## Configuration file
+
+`mcp_config.toml` defines the list of servers.  An example is included in this repository:
 
 ```toml
 [[server]]
 repo = "https://github.com/agency-ai-solutions/openai-codex-mcp.git"
 command = "./setup_and_run.sh"
-# env = { OPENAI_API_KEY = "your-openai-key" }
-# transport defaults to "http". Use "stdio" to pipe stdin/stdout
+env = { OPENAI_API_KEY = "your-openai-key" }
 transport = "stdio"
 
 [[server]]
 repo = "https://github.com/tavily-ai/tavily-mcp.git"
 command = "npx -y tavily-mcp@0.2.1 serve"
 # env = { TAVILY_API_KEY = "your-key" }
+# transport defaults to "http"
 ```
 
-## Build
+Field description:
+
+- **repo** – Git repository to clone.
+- **command** – Command executed to start the server.
+- **env** – Optional environment variables passed to the process.
+- **transport** – Either `"http"` (default) or `"stdio"`.
+
+## Building the image
 
 ```bash
-docker build -t mcp-archestrator .
+docker build -t mcp-orchestrator .
 ```
 
-## Run
+## Running
+
+Expose the ports used by your servers and start the container:
 
 ```bash
-docker run --rm -p 8000:8000 -p 8001:8001 mcp-archestrator
+docker run --rm -p 8000:8000 -p 8001:8001 mcp-orchestrator
 ```
+
+On Windows PowerShell:
+
 ```powershell
-docker build -t mcp-archestrator .; docker run --rm -p 8000:8000 -p 8001:8001 mcp-archestrator
+docker build -t mcp-orchestrator .; docker run --rm -p 8000:8000 -p 8001:8001 mcp-orchestrator
 ```
 
-Adjust the ports for your servers as needed. To supply a custom config file:
+To supply a custom configuration file and API keys:
 
 ```bash
 docker run --rm \
@@ -45,7 +63,8 @@ docker run --rm \
   -e OPENAI_API_KEY=your-openai-key \
   -e TAVILY_API_KEY=your-key \
   -v $(pwd)/config.toml:/config.toml \
-  mcp-archestrator
+  mcp-orchestrator
 ```
 
-This allows you to easily add additional MCP servers with their required environment variables.
+This approach makes it easy to extend the container with additional MCP servers without altering the image itself.
+
